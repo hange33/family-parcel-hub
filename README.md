@@ -1,254 +1,107 @@
-# 取件助手 (Pickup App)
+# family-parcel-hub · 家庭取件码聚合
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Flutter-3.6+-02569B?logo=flutter&logoColor=white" alt="Flutter" />
-  <img src="https://img.shields.io/badge/Dart-3.6+-0175C2?logo=dart&logoColor=white" alt="Dart" />
-  <img src="https://img.shields.io/badge/Android-7.0+-3DDC84?logo=android&logoColor=white" alt="Android" />
-  <img src="https://img.shields.io/badge/Material%20Design-3-7B1FA2" alt="Material 3" />
-  <img src="https://img.shields.io/badge/Release-v1.0.0-00B578" alt="Version 1.0.0" />
-  <img src="https://img.shields.io/badge/tests-271%20passing-3DDC84" alt="Tests" />
+  <img src="https://img.shields.io/badge/Python-3.11-blue" alt="Python" />
+  <img src="https://img.shields.io/badge/hub依赖-零第三方-success" alt="stdlib only" />
+  <img src="https://img.shields.io/badge/Docker-支持-2496ED?logo=docker&logoColor=white" alt="Docker" />
   <img src="https://img.shields.io/badge/License-GPLv3-blue" alt="License" />
 </p>
 
-一款现代化、高刷新率的中文在途快件追踪与待取包裹聚合管理 Android 应用。
+把全家人在 **拼多多 / 淘宝 / 京东** 的包裹，聚合到一个完全自托管的服务里：
 
-聚合拼多多、京东、淘宝/天猫等多电商平台真实物流，解决包裹分散、双端登录互踢、取件码格式不一等日常取件痛点。
+**到站即推送 · 取走自动识别 · 每天 17:00 汇总**，全部跑在自己的 NAS 上，不经手任何第三方云。
 
----
+> 本项目基于 [Granter-z/parcly](https://github.com/Granter-z/parcly)（GPL-3.0）二次开发：
+> 保留其 Flutter 客户端并做适配，新增了 NAS 常驻服务端、Web 看板与推送体系。
+> 对上游的逐条改动见 [MODIFICATIONS.md](MODIFICATIONS.md)。
 
-## 解决的核心痛点
+## 功能
 
-1. **包裹散落多平台，来回切换繁琐**：日常购物分散在拼多多、京东、淘宝各处，查看在途包裹或找取件码需要逐个打开 App。
-2. **拼多多双端登录单设备互踢**：拼多多服务端实行严格的单设备会话控制，第三方聚合读取往往导致手机官方 App 被踢下线。
-3. **物流轨迹与取件信息简陋不全**：普通工具仅能抓取粗略的文字，缺乏完整的转运时间轴、准确的运单号/订单号、网点派送员电话及真实收货地址。
-4. **即时订单与退款订单污染列表**：外卖闪送（如秒送、达达、餐饮）及退款取消的订单常常误入包裹列表，干扰判断。
+- 📦 **多平台到站监控**
+  拼多多：网页包裹助手桌面会话（不踢官方 App）；
+  淘宝：菜鸟驿站 MTOP 接口（纯 HTTP，不开页面）；
+  京东：订单列表接口解析。
+- ✅ **取走自动识别**
+  权威快照对比 + 平台状态签名，变化后静默 10 分钟合并成一条推送，一个驿站一次取完只打扰一次。
+- 📋 **每日 17:00 未取汇总**
+  没有未取件就不发，绝不空转打扰。
+- ⚠️ **登录失效提醒**
+  cookie 失效立即私聊提醒（12 小时冷却防刷屏），恢复登录也会通知。
+- 🌙 **夜间免打扰**
+  `22:30–08:00` 的消息顺延到早上，合并成一条补发；时段可配置。
+- 🖥 **Web 看板**
+  未取件 / 已取件 / 账号绑定（扫码出码）/ 运行日志，手机电脑浏览器直接用。
+- 🔐 **登录态自主可控**
+  cookie 只存 NAS 的 `state/` 目录，绝不入 git；支持令牌鉴权开关。
 
----
+## 架构
 
-## 核心功能特性
-
-### 1. 多电商平台聚合与在途自动化同步
-- **拼多多 (Pinduoduo)**：抓取在途及待取包裹，智能提取多多驿站/代收点取件码、真实商品图与物流节点。
-- **京东商城 (JD)**：精准定位待收货购物订单，深度提取自营物流、便民柜自提码与在途配送状态；自动排除外卖、秒送、到家即时订单。
-- **淘宝 / 天猫 (Taobao)**：通过 MTOP 与移动网页端凭据对接，聚合菜鸟驿站取件码及在途商品图文。
-- **智能承运商识别**：根据快递运单号前缀规律（如 `JT` 极兔速递、`SF` 顺丰速运、`YT` 圆通速递、`ST` 申通快递、`JD` 京东快递、`ZTO` 中通快递等）自动补全承运商，杜绝显示为“其他”。
-
-### 2. 拼多多内置移动端商城（免 App 防互踢）
-- **完整的移动端容器**：封装原生优化的 H5 单页容器，支持商品浏览、搜索、加入购物车、下单与支付。
-- **打通第三方支付**：拦截外部 App 导流唤起的同时，放行微信支付（`weixin://`）与支付宝（`alipays://`），实现在应用内一站式完成购物。
-- **彻底杜绝双端互踢**：应用本身即作为日常拼多多使用的主要窗口，无需在手机上保留或切换至官方 App，从根本上避开单设备互踢限制。
-- **纯净浏览体验**：内置动态 DOM 与全局 CSS 清理脚本，自动实时剔除「在App打开 〉」浮标、顶部/底部诱导下载横幅。
-- **无感登录态保持与秒级退出**：自动持久化会话 Cookie；左侧配置专用 `✕` 关闭按钮，无论浏览多深均可一键秒回应用首页；进入订单中心时自动静默调度数据同步。
-
-### 3. 官方级深度物流时间轴（二级抽屉）
-- **视觉风格深度复刻**：
-  - **承运商与运单号栏**：品牌绿色高亮显示，附带一键复制运单号及触觉反馈。
-  - **订单编号与收货信息卡**：清晰展示真实订单编号（带独立复制按钮），以及真实收货地址（支持多行长地址展开/收起）。
-  - **翠绿色动态在途节点**：最新轨迹节点采用翠绿色脉冲双环与高亮文字，醒目标记当前最新位置。
-  - **完整历史转运流**：灰色圆点连线串联发货、打包、各转运中心与分拨交付节点。
-  - **电话号码智能高亮呼叫**：自动匹配轨迹文案中的派送员手机号、网点座机与官方客服热线，高亮为蓝色超链接，点击一键唤起系统拨号盘拨打。
-
-### 4. 现代化在途优先 UI (120Hz Fluid Design)
-- **Hero 统计仪表盘**：主页顶部动态呈现“待取件”与“在途快件”总数，支持一键旋转动效触发全平台同步。
-- **物理弹簧卡片 (Spring Card)**：基于物理模拟的触摸反馈，支持 120Hz 原生流畅手势与阶梯式进场动画。
-- **待取件凭证徽章 (HeroPickupBadge)**：包裹到达自提点后，以显眼的大号提货码呈现，一目了然。
-- **二级完成面板 (Completed Packages Sheet)**：已签收完成的历史订单自动归档至二级抽屉，保持主列表清爽聚焦。
-
-### 5. 后台自动同步与平台保活
-- **自适应同步间隔**：按包裹状态动态调整——派送中 15 分钟、待取件 30 分钟、在途 1 小时、无活跃包裹则暂停。
-- **生命周期感知**：应用退到后台自动恢复同步，回到前台暂停，不做无意义的常驻网络请求。
-- **到件通知**：状态推进到「待取件」时推送本地通知，内容形如 `快递公司 · 取件码:XXXX · 驿站名`。
-- **平台保活心跳**：定期向各平台发送心跳延长 Cookie 有效期（由 7–14 天延长至长期有效），心跳失败只记日志，不打扰用户。
-
-### 6. 同步提速
-- **并发拉取**：三个平台的订单详情并发请求，最多 3 并发，配 100–400ms 随机延迟防风控。
-- **智能跳过**：24 小时内已同步过的订单，以及已取件 / 已归档 / 已拒收的订单，直接跳过详情请求。
-- **流式返回**：每解析出一个包裹就立即更新界面，不等其他包裹完成。
-- 实测：首次同步 14s → 5s，二次同步（含已完成订单）29s → 5s，5 分钟内重复刷新为秒级返回。
-
-### 7. 文本解析管道（含 OCR 噪声容错）
-- **噪声清洗**：从平台页面抓取的文本中剔除广告、导航与营销文案，只保留与物流相关的行。
-- **容错解析**：针对 OCR 常见的形近字（须丰 → 顺丰）与字母数字混淆（`O` → `0`、`I` / `l` → `1`）做修正，同时兼容带分隔符的运单号与取件码。
-- **去重与生命周期推进**：以取件码与运单特征为核心，单向推进包裹生命周期（在途 → 派送中 → 到达待取 → 已提货），防止重复入库。
-
-> 说明：截屏导入 + 端侧 OCR 识别入口尚未接入，当前版本不依赖任何 ML Kit；解析管道已按 OCR 输出格式做过容错，后续接入可直接复用。
-
-### 8. 隐私与日志安全
-- **日志脱敏**：运单号、订单号、取件码只记录平台前缀与计数，不打印完整值。
-- **PII 检查脚本**：`tools/check_no_pii.sh` 用于在提交前扫描仓库，防止真实订单数据与个人信息混入。
-- **真实数据隔离**：原始日志、采集导出与真实截图放在 `private/`、`real_world/` 等被忽略的目录，永不入库。
-
----
-
-## 系统架构
-
-项目遵循严格的**四层单向依赖架构**，保障模块解耦与跨平台复用：
-
-```text
-       ┌────────┐
-       │   ui/  │ ── 渲染层：Flutter 页面、组件、Riverpod Providers、Theme
-       └───┬────┘
-           │
-           ├───────────────┐
-           ▼               ▼
-       ┌────────┐      ┌───────────┐
-       │  app/  │      │ platform/ │ ── 适配层：Hive 存储、平台连接器、通知、后台同步、保活
-       └───┬────┘      └─────┬─────┘
-           │                 │
-           └────────┬────────┘
-                    ▼
-               ┌────────┐
-               │ core/  │ ── 纯 Dart 核心逻辑（冻结层）：不可变模型、状态机、解析器
-               └────────┘
+```
+                    ┌──────────────────────────────────────┐
+ 手机 QQ ←── qq-bridge ←──│  parcel-hub :8790                    │
+                    │  （Web 看板 + API + SQLite，零依赖）   │
+                    └──────────────┬───────────────────────┘
+                                   │ 上报 / 出码代理
+浏览器 ──→ Web 看板（公网/内网）──→│  parcel-scrapers :8791
+                    └──────────────┬───────────────────────┘
+                                   │ Playwright / HTTP
+                          拼多多 · 淘宝(菜鸟) · 京东
 ```
 
-> **架构约束**：`lib/core/` 必须保持为纯 Dart 代码，严禁导入 Flutter SDK、平台驱动或状态管理包，确保核心计算与业务逻辑具备 100% 的可测试性。
+## 目录
 
-### 双模型序列化设计
-- **`Package`** (`lib/core/models/package.dart`)：纯 Dart 不可变领域模型，包含完整商品元数据、承运商、取件码、序列化轨迹 JSON 等。
-- **`HivePackage`** (`lib/platform/storage/hive_package.dart`)：适配本地 NoSQL 存储的 TypeAdapter 包装器，支持平滑迁移与向后兼容。
+| 路径 | 说明 |
+|---|---|
+| `hub/` | NAS 常驻服务端：`app.py`（Web+API+状态机）、`run_scrapers.py`（抓取调度）、`scrapers.py`（三家平台实现）、`web/`（单文件看板）、`test/`（回归测试） |
+| `lib/` `android/` `test/` | Flutter 客户端（基于 parcly 二次开发，可选；改动清单见 MODIFICATIONS.md） |
+| `tools/pdd_web/` | 拼多多网页端取件码探测脚本 |
+| `docs/` | 原版验证清单等记录 |
 
----
-
-## 下载安装
-
-正式版 APK 见 [Releases](https://github.com/Granter-z/parcly/releases/latest)。手机端按 CPU 架构选择：
-
-| 文件 | 适用机型 |
-| --- | --- |
-| `app-arm64-v8a-release.apk` | 绝大多数 2017 年后的手机，**首选** |
-| `app-armeabi-v7a-release.apk` | 老旧 32 位机型 |
-| `app-release-1.0.0-universal.apk` | 不确定架构时的通用包，体积最大 |
-| `app-x86_64-release.apk` | Android 模拟器 |
-
-安装前需要在系统设置里允许「安装未知来源应用」。各架构包的 SHA-256 见 Release 页附带的 `SHA256SUMS.txt`。
-
-> 本应用直接使用各电商平台的登录凭据抓取自己的订单数据，仅存本地（Hive），不上传任何服务器。请勿使用他人账号登录。
-
----
-
-## 快速上手
-
-### 环境要求
-- **Flutter SDK**：`^3.6.0`（推荐使用 Flutter 3.29+ / Dart 3.7+）
-- **Android SDK**：Min SDK 24 (Android 7.0+)，Target SDK 34 (Android 14) / 兼容 Android 15 & 16
-- **JDK**：Java 17
-- **开发设备**：建议使用物理 Android 设备测试 Impeller Vulkan 渲染与平台 CookieManager
-
-### 获取源码与依赖
+## 快速开始（Docker）
 
 ```bash
-# 克隆仓库
-git clone git@github.com:Granter-z/parcly.git
-cd parcly
+# 1. 准备配置
+cp hub/config.example.json config.hub.json   # 按需修改 token / owners / qq_bridge
+cp hub/config.example.json config.json       # 抓取器侧：accounts / platforms / qr
 
-# 获取 Flutter 依赖
-flutter pub get
+# 2. 启动
+docker compose -f hub/docker-compose.example.yml up -d --build
+# 首次启动 bootstrap.sh 会自动安装 chromium + playwright，之后不再重复
+
+# 3. 打开看板
+http://<NAS 内网 IP>:8790/
 ```
 
-### 编译与运行
+主要配置字段（`config.hub.json`）：
 
-```bash
-# 启动开发调试（支持物理机与模拟器）
-flutter run
+| 字段 | 说明 |
+|---|---|
+| `dry_run` | `true` 只打日志不推送，上线前先用它观察一天 |
+| `token` / `require_token` | Web/API 鉴权；`require_token=false` 时打开网页即可用 |
+| `owners` | 账号 id → 显示名（推送里显示谁取的） |
+| `platforms` | 启用哪些平台：`pdd` / `taobao` / `jd` |
+| `qq_bridge` | QQ 桥地址、令牌与目标（`me` 私聊 / `group` 群聊） |
+| `quiet_hours` | 夜间免打扰窗口，默认 `22:30–08:00` |
+| `summary_at` | 每日汇总时间，默认 `17:00` |
 
-# 代码规范与静态检查
-flutter analyze lib/
+## 推送
 
-# 运行全量单元测试与回归套件
-flutter test
+| 消息 | 触发 | 时机 |
+|---|---|---|
+| 📦 新到件 | 首次拿到取件码 | 立即 |
+| ✅ 已取（合并） | 权威快照中消失 / 平台状态转已签收 | 最后一次变化后静默 10 分钟，合并一条 |
+| ✅ 已取（单件） | Web 端手动标记 | 立即 |
+| 📋 未取汇总 | 每日定时 | 有未取件才推 |
+| ⚠️ 登录失效 | cookie 检查失败 | 立即，12 小时冷却防刷屏 |
 
-# 构建通用 Release APK（包含全部 ABI）
-flutter build apk --release
+推送通道是通用的 HTTP POST（`qq_bridge.url`），接 QQ 机器人、Telegram bot、 Bark 等都可以。
 
-# 按 CPU 架构分包（体积更小，推荐用于分发）
-flutter build apk --release --split-per-abi
-```
+## 安全
 
-编译产物位于 `build/app/outputs/flutter-apk/`。`flutter build apk --release` 产出通用包 `app-release.apk`；加 `--split-per-abi` 后产出 `app-arm64-v8a-release.apk`、`app-armeabi-v7a-release.apk`、`app-x86_64-release.apk`。
+- 登录态 cookie 只存 NAS 本地 `state/`，**绝不入 git**（`.gitignore` 已覆盖）
+- 默认建议 `require_token: true`；`false` 仅限临时调试，公网上等于裸奔
+- 仅供个人/家庭使用，请遵守各平台服务条款，控制抓取频率
 
-### 测试
+## License
 
-测试全部为纯 Dart / Widget 测试，无需设备：
-
-```bash
-flutter test                                   # 全量（当前 271 个用例）
-flutter test test/package_identity_test.dart   # 单个文件
-```
-
-测试重点覆盖：包裹身份判定与打码单号合并、多源时间线合并与时间解析、状态推导、淘宝同步策略、取件码显示规则、列表增删动效与抽屉交互。
-
-Release 包不包含任何调试入口：设置页的「后台同步测试工具」由 `kDebugMode` 门控，release 编译时被常量折叠并随 AOT tree-shaking 一并移除。
-
----
-
-## 项目目录结构
-
-```text
-lib/
-├── core/                        # 纯 Dart 业务逻辑层（冻结，禁止导入 Flutter）
-│   ├── models/                  # Package、OrderMeta、PickupInfo、TrackingTrace
-│   ├── engine/                  # 身份判定、状态推导、时间线合并、Hero 显示决策
-│   ├── parser/                  # 快递公司、单号、取件码提取器与词典
-│   ├── sanitizer/               # 页面文本归一化与噪声清洗
-│   ├── debug/                   # 调试追踪与性能度量
-│   └── utils/                   # 文本归一化工具
-├── app/                         # 应用级决策编排（hero_decision.dart）
-├── platform/                    # 基础设施与平台适配层
-│   ├── connectors/              # 电商连接器（拼多多、京东、淘宝）、并发控制、智能跳过
-│   ├── keep_alive/              # Cookie 保活心跳与调度
-│   ├── notification/            # 本地通知（到件提醒、24 小时取件提醒）
-│   ├── storage/                 # Hive 存储与 Cookie / 凭据持久化
-│   ├── sync/                    # 后台同步服务与同步历史
-│   └── webview/                 # WebView Cookie 桥接
-└── ui/                          # 视图与交互表现层
-    ├── components/              # 弹簧卡片、平台徽章、Hero 取件码徽章、物流时间轴
-    ├── providers/               # Riverpod 状态提供者（PackageListNotifier 等）
-    ├── theme/                   # 主题、状态配色、全局动效令牌（Motion）
-    └── screens/
-        ├── home/                # 在途优先主页、Hero 仪表盘、物流时间轴抽屉
-        ├── pdd/                 # 拼多多内置移动端商城容器（PddWebScreen）
-        ├── login/               # 平台账号授权与 Cookie 捕获页面
-        └── settings/            # 平台绑定、保活状态、诊断
-```
-
-配套文档放在 `docs/`：后台同步、保活机制、同步提速各阶段实施记录与测试指南。
-
----
-
-## 版本历史
-
-### v1.0.0 (2026-10-07)
-首个正式版本。
-
-**平台聚合同步**
-- 拼多多、京东、淘宝 / 天猫真实订单聚合，自动排除外卖闪送与退款订单。
-- 基于运单号前缀的承运商智能推断（极兔 `JT`、顺丰 `SF`、圆通 `YT`、申通 `ST`、中通 `ZTO` 等）。
-
-**拼多多内置移动端**
-- 封装独立 H5 商城，支持浏览、搜索、加购、下单与支付；放行 `weixin://`、`alipays://` 唤起，拦截其余外部导流；内置 DOM / CSS 清理脚本剔除「在 App 打开」浮标与下载横幅。
-- 自动持久化登录态，侧边 `✕` 一键秒回首页，从根本上规避单设备登录互踢。
-
-**物流详情抽屉**
-- 承运商与运单号栏（一键复制）、订单号与收货地址卡（长地址可展开 / 收起）、最新节点翠绿脉冲圆点、完整转运时间轴、轨迹内电话号码高亮一键拨号。
-
-**后台同步与保活**
-- 自适应同步间隔（派送中 15 分钟 / 待取件 30 分钟 / 在途 1 小时 / 空闲暂停）、生命周期感知、到件本地通知、平台 Cookie 保活心跳。
-
-**同步提速**
-- 3 并发拉取订单详情、24 小时内与已完成订单智能跳过、流式返回；首次同步 14s → 5s，二次同步 29s → 5s。
-
-**界面与动效**
-- Hero 统计仪表盘（含同步完成态反馈）、物理弹簧卡片、列表增删与重排动画（修复流式同步时卡片串位）、时间轴节点逐个淡入、已完成包裹归档抽屉、确认取件改为二次确认。
-- 全局动效令牌集中在 `lib/ui/theme/motion.dart`，时长与曲线不再散落魔法数字。
-
-**安全**
-- 运单号 / 订单号 / 取件码日志脱敏，只记录平台前缀与计数。
-- `tools/check_no_pii.sh` 提交前扫描，防止真实数据入库；真实日志与截图隔离在忽略目录。
-- Release 包不含任何调试入口。
-
----
-
-## 许可证
-
-本项目基于 [GNU General Public License v3.0 (GPL-3.0)](LICENSE) 协议开源。
+GPL-3.0。基于 [Granter-z/parcly](https://github.com/Granter-z/parcly) 二次开发，感谢原作者。
