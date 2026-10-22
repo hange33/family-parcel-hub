@@ -1,15 +1,41 @@
 {
   "dry_run": true,
+  "require_token": true,
   "token": "换成 32 字节随机串",
+  "platforms": [
+    "pdd",
+    "taobao",
+    "jd"
+  ],
+  "accounts": [
+    {
+      "id": "wo",
+      "label": "我"
+    }
+  ],
   "owners": {
-    "wo": "我",
-    "ta": "对象"
+    "wo": "我"
+  },
+  "interval_min": 30,
+  "wait_on_login": false,
+  "login_wait_sec": 900,
+  "hub": {
+    "url": "http://127.0.0.1:8790",
+    "token": "与上方 token 相同"
   },
   "qq_bridge": {
     "url": "http://127.0.0.1:8787/notify",
     "token": "qq-bridge 的 X-Bridge-Token",
-    "target": "group"
+    "target": "me"
   },
-  "summary_at": "17:00",
-  "max_pickup_age_hours": 72
+  "qr": {
+    "port": 8791,
+    "token": "换成随机串",
+    "base": "https://parcel.example.com"
+  },
+  "quiet_hours": {
+    "start": "22:30",
+    "end": "08:00"
+  },
+  "summary_at": "17:00"
 }

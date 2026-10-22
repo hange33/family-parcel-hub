@@ -1,10 +1,7 @@
 name: build-apk
 
 on:
-  workflow_dispatch:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:   # App 已冻结：只在手动触发时构建，tag 推送不再自动出包
 
 permissions:
   contents: read

@@ -6,11 +6,19 @@ services:
     network_mode: host          # 与 qq-bridge 同网络，直接访问 127.0.0.1:8787
     environment:
       - TZ=Asia/Shanghai
-      - HUB_TOKEN=${HUB_TOKEN}
-      - QQ_BRIDGE_URL=http://127.0.0.1:8787/notify
-      - QQ_BRIDGE_TOKEN=${QQ_BRIDGE_TOKEN}
-      - QQ_TARGET=group
-      - HUB_DRY_RUN=1           # 上线前先看日志，确认干了再改 0
     volumes:
+      - ./config.hub.json:/app/config.hub.json
       - ./data:/app/data
-      - /vol1/xxx/obsidian/vaults/knowledge-base/raw/credentials:/creds:ro
+
+  parcel-scrapers:
+    image: python:3.11-slim
+    container_name: parcel-scrapers
+    restart: unless-stopped
+    command: sh /app/bootstrap.sh
+    environment:
+      - TZ=Asia/Shanghai
+      - PLAYWRIGHT_BROWSERS_PATH=/app/.pw-browsers
+    ports:
+      - "8791:8791"
+    volumes:
+      - .:/app
