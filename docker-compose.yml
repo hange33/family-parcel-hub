@@ -1,0 +1,32 @@
+# 从仓库根目录运行：docker compose up -d --build
+# 两份配置文件放在仓库根：config.hub.json（服务端）/ config.json（抓取器）
+# 示例见 hub/config.hub.example.json 与 hub/config.scrapers.example.json
+services:
+  parcel-hub:
+    build: ./hub              # 镜像里只有 app.py（Web + API + 状态机）
+    container_name: parcel-hub
+    restart: unless-stopped
+    network_mode: host        # 与 qq-bridge 同网络，直接访问 127.0.0.1:8787
+    environment:
+      - TZ=Asia/Shanghai
+      - HUB_CONFIG=/app/config.hub.json
+    volumes:
+      - ./config.hub.json:/app/config.hub.json
+      - ./hub/web:/app/web            # 前端单文件，改完刷新即可，无需重建镜像
+      - ./data:/app/data
+
+  parcel-scrapers:
+    image: python:3.11-slim
+    container_name: parcel-scrapers
+    restart: unless-stopped
+    command: sh /app/bootstrap.sh   # 首次启动自动装 chromium + playwright
+    environment:
+      - TZ=Asia/Shanghai
+      - PLAYWRIGHT_BROWSERS_PATH=/app/.pw-browsers
+    ports:
+      - "8791:8791"
+    volumes:
+      - ./hub:/app                  # 代码 + parsers + web + bootstrap.sh
+      - ./config.json:/app/config.json
+      - ./state:/app/state
+      - ./dump:/app/dump

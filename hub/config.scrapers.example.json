@@ -1,0 +1,30 @@
+{
+  "accounts": [
+    {
+      "id": "wo",
+      "label": "我"
+    }
+  ],
+  "platforms": [
+    "pdd",
+    "taobao"
+  ],
+  "interval_min": 30,
+  "dry_run": false,
+  "hub": {
+    "url": "http://127.0.0.1:8790",
+    "token": "与 config.hub.json 的 token 相同"
+  },
+  "qq": {
+    "url": "http://127.0.0.1:8787/notify",
+    "token": "qq-bridge 的 X-Bridge-Token",
+    "target": "me"
+  },
+  "qr": {
+    "port": 8791,
+    "token": "换成随机串",
+    "base": "https://parcel.example.com"
+  },
+  "login_wait_sec": 900,
+  "wait_on_login": false
+}

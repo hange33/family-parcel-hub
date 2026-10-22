@@ -41,3 +41,16 @@ hub/.qq_token_cache.json
 # Python 缓存（hub 侧脚本在 NAS 容器里跑，本机不跟踪）
 __pycache__/
 *.pyc
+
+# 部署时生成的本地数据与配置（绝不入库）
+config.json
+config.hub.json
+hub/config.json
+hub/config.hub.json
+hub/state/
+hub/dump/
+hub/data/
+hub/.venv/
+hub/.pw-browsers/
+*.sqlite
+*.sqlite.bak-*

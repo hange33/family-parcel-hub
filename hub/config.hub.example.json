@@ -1,0 +1,23 @@
+{
+  "dry_run": true,
+  "require_token": true,
+  "token": "换成 32 字节随机串",
+  "owners": {
+    "wo": "我"
+  },
+  "qq_bridge": {
+    "url": "http://127.0.0.1:8787/notify",
+    "token": "qq-bridge 的 X-Bridge-Token",
+    "target": "me"
+  },
+  "quiet_hours": {
+    "start": "22:30",
+    "end": "08:00"
+  },
+  "summary_at": "17:00",
+  "max_pickup_age_hours": 72,
+  "scrapers": {
+    "url": "http://127.0.0.1:8791",
+    "qr_token": "与 config.json 的 qr.token 相同"
+  }
+}
