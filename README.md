@@ -18,9 +18,9 @@
 ## 功能
 
 - 📦 **多平台到站监控**
-  拼多多：网页包裹助手桌面会话（不踢官方 App）；
-  淘宝：菜鸟驿站 MTOP 接口（纯 HTTP，不开页面）；
-  京东：订单列表接口解析。
+  拼多多：网页包裹助手桌面会话（不踢官方 App）✅；
+  淘宝：菜鸟驿站 MTOP 接口（纯 HTTP，不开页面）✅；
+  京东 ⏸：解析与登录探测代码已内置，但登录被风控（要求本人语音认证），**默认未启用**。
 - ✅ **取走自动识别**
   权威快照对比 + 平台状态签名，变化后静默 10 分钟合并成一条推送，一个驿站一次取完只打扰一次。
 - 📋 **每日 17:00 未取汇总**
@@ -59,30 +59,46 @@
 
 ## 快速开始（Docker）
 
+两份配置放在仓库根：`config.hub.json`（服务端）、`config.json`（抓取器），
+示例在 [hub/config.hub.example.json](hub/config.hub.example.json) 与
+[hub/config.scrapers.example.json](hub/config.scrapers.example.json)。
+
 ```bash
-# 1. 准备配置
-cp hub/config.example.json config.hub.json   # 按需修改 token / owners / qq_bridge
-cp hub/config.example.json config.json       # 抓取器侧：accounts / platforms / qr
+git clone https://github.com/hange33/family-parcel-hub.git
+cd family-parcel-hub
+cp hub/config.hub.example.json config.hub.json      # hub 侧：token / owners / qq_bridge
+cp hub/config.scrapers.example.json config.json     # 抓取器侧：accounts / platforms / qr
 
-# 2. 启动
-docker compose -f hub/docker-compose.example.yml up -d --build
-# 首次启动 bootstrap.sh 会自动安装 chromium + playwright，之后不再重复
+# 编辑两份配置后：
+docker compose up -d --build
+# 抓取器首次启动 bootstrap.sh 会自动装 chromium + playwright，之后不再重复
 
-# 3. 打开看板
+# 打开看板
 http://<NAS 内网 IP>:8790/
 ```
 
-主要配置字段（`config.hub.json`）：
+主要配置字段：
+
+**config.hub.json（服务端）**
 
 | 字段 | 说明 |
 |---|---|
-| `dry_run` | `true` 只打日志不推送，上线前先用它观察一天 |
-| `token` / `require_token` | Web/API 鉴权；`require_token=false` 时打开网页即可用 |
+| `token` / `require_token` | Web/API 鉴权；`require_token=false` 时打开网页即可用（公网不建议） |
 | `owners` | 账号 id → 显示名（推送里显示谁取的） |
-| `platforms` | 启用哪些平台：`pdd` / `taobao` / `jd` |
 | `qq_bridge` | QQ 桥地址、令牌与目标（`me` 私聊 / `group` 群聊） |
-| `quiet_hours` | 夜间免打扰窗口，默认 `22:30–08:00` |
+| `quiet_hours` | 夜间免打扰窗口，默认 `22:30–08:00`，窗口内的推送顺延合并补发 |
 | `summary_at` | 每日汇总时间，默认 `17:00` |
+| `scrapers` | 抓取器地址与二维码令牌（hub 代理出码用） |
+
+**config.json（抓取器）**
+
+| 字段 | 说明 |
+|---|---|
+| `accounts` / `platforms` | 谁的哪些平台要抓；京东默认不在列表里 |
+| `interval_min` | 抓取间隔，默认 30 分钟 |
+| `hub` | 上报地址与令牌（与 hub 的 `token` 一致） |
+| `qr` | 扫码二维码服务的端口 / 令牌 / 公网前缀 |
+| `wait_on_login` | 登录失效时是否阻塞等扫码；默认 `false`（跳过并告警） |
 
 ## 推送
 
