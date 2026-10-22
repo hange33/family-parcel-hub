@@ -1,0 +1,16 @@
+services:
+  parcel-hub:
+    build: .
+    container_name: parcel-hub
+    restart: unless-stopped
+    network_mode: host          # 与 qq-bridge 同网络，直接访问 127.0.0.1:8787
+    environment:
+      - TZ=Asia/Shanghai
+      - HUB_TOKEN=${HUB_TOKEN}
+      - QQ_BRIDGE_URL=http://127.0.0.1:8787/notify
+      - QQ_BRIDGE_TOKEN=${QQ_BRIDGE_TOKEN}
+      - QQ_TARGET=group
+      - HUB_DRY_RUN=1           # 上线前先看日志，确认干了再改 0
+    volumes:
+      - ./data:/app/data
+      - /vol1/xxx/obsidian/vaults/knowledge-base/raw/credentials:/creds:ro

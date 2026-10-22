@@ -1,0 +1,15 @@
+name: secure_store
+description: Android Keystore AES-GCM 凭据加密桥接，供前后台 FlutterEngine 共用。
+version: 1.0.0
+publish_to: 'none'
+
+environment:
+  sdk: ^3.6.0
+  flutter: '>=3.38.0'
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: com.example.secure_store
+        pluginClass: SecureStorePlugin

@@ -1,0 +1,43 @@
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+.kotlin/
+*.iml
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+local.properties
+.cursor/
+
+# 历史过时工具与分析脚本
+bin/
+diagnose_error.sh
+
+# ── 真实数据（未脱敏），永远不提交 ──
+# 仓库是公开的：进 git 的样本必须先脱敏，放 test/fixtures/。
+# 原始日志、采集导出、真实截图一律放下面这些位置。
+private/
+test/fixtures_private/
+tb_log*.txt
+*_raw.json
+*.diag.zip
+diag_export*/
+real_world/
+
+# ── family-hub：登录态与本地数据，绝不入库 ──
+tools/pdd_web/state/
+tools/pdd_web/dump/
+hub/data/
+*.sqlite
+*.sqlite3
+hub/.qq_token_cache.json
+
+# Python 缓存（hub 侧脚本在 NAS 容器里跑，本机不跟踪）
+__pycache__/
+*.pyc

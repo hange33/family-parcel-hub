@@ -1,0 +1,23 @@
+services:
+  pdd-web:
+    build: .
+    container_name: pdd-web
+    restart: unless-stopped
+    network_mode: host          # 直接访问 127.0.0.1 上的 parcel-hub / qq-bridge
+    shm_size: "512mb"           # Chromium 需要，默认 64MB 会崩
+    environment:
+      - TZ=Asia/Shanghai
+      - PDD_DEVICE=wo
+      - PDD_DEVICE_LABEL=我
+      - PDD_INTERVAL_MIN=30
+      - PDD_DRY_RUN=1           # 先只打印解析结果，确认无误再改 0
+      - HUB_URL=http://127.0.0.1:8790
+      - HUB_TOKEN=${HUB_TOKEN}
+      - QQ_BRIDGE_URL=http://127.0.0.1:8787/notify
+      - QQ_BRIDGE_TOKEN=${QQ_BRIDGE_TOKEN}
+      - QQ_TARGET=group
+      - QR_PORT=8791
+      - QR_TOKEN=${QR_TOKEN}    # /qr.png 的访问口令，随机 16 字节
+      - QR_BASE=https://pdd.example.com
+    volumes:
+      - ./state:/app/state

@@ -1,0 +1,37 @@
+name: pickup_app
+description: iOS-style pickup management app
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.6.1
+  intl: ^0.19.0
+  cupertino_icons: ^1.0.8
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  flutter_local_notifications: ^18.0.1
+  timezone: ^0.9.4
+  uuid: ^4.5.1
+  equatable: ^2.0.5
+  crypto: ^3.0.3
+  webview_flutter: ^4.14.1
+  http: ^1.6.0
+  url_launcher: ^6.3.3
+  workmanager: ^0.10.10
+  secure_store:
+    path: plugins/secure_store
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.13
+
+flutter:
+  uses-material-design: true

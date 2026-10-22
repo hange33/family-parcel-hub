@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>取件码 · 家庭聚合</title>
+<style>
+:root{
+  --bg:#f5f6f8; --card:#ffffff; --line:#e3e6ea; --text:#1c2128; --muted:#6b7684;
+  --accent:#2563eb; --accent-soft:#eef3ff; --ok:#16a34a; --ok-soft:#eaf7ef;
+  --warn:#d97706; --warn-soft:#fef4e6; --danger:#dc2626; --radius:10px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 16px 60px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+h1{font-size:19px;margin:0;font-weight:600}
+.sub{color:var(--muted);font-size:13px}
+.spacer{flex:1}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px;margin-bottom:16px}
+.card h2{font-size:15px;margin:0 0 12px;font-weight:600;display:flex;align-items:center;gap:8px}
+.count{background:var(--accent-soft);color:var(--accent);font-size:12px;
+  padding:1px 8px;border-radius:99px;font-weight:600}
+button{font:inherit;cursor:pointer;border-radius:7px;border:1px solid var(--line);
+  background:#fff;padding:6px 13px;color:var(--text);transition:.15s}
+button:hover{border-color:var(--accent);color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{opacity:.88;color:#fff}
+button:disabled{opacity:.45;cursor:not-allowed}
+input,select{font:inherit;padding:6px 10px;border:1px solid var(--line);border-radius:7px;
+  background:#fff;color:var(--text);min-width:0}
+input:focus,select:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:9px 8px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{color:var(--muted);font-weight:500;font-size:12px;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:600;letter-spacing:.3px}
+.badge{display:inline-block;font-size:11px;padding:1px 8px;border-radius:99px;font-weight:500}
+.b-ok{background:var(--ok-soft);color:var(--ok)}
+.b-warn{background:var(--warn-soft);color:var(--warn)}
+.b-mute{background:#eef0f3;color:var(--muted)}
+.b-accent{background:var(--accent-soft);color:var(--accent)}
+.empty{color:var(--muted);text-align:center;padding:28px 0;font-size:13px}
+.tabs{display:flex;gap:6px;margin-bottom:14px}
+.tabs button{border-radius:99px}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.stat{flex:1;min-width:130px;background:var(--card);border:1px solid var(--line);
+  border-radius:var(--radius);padding:12px 14px}
+.stat .n{font-size:22px;font-weight:600;line-height:1.2}
+.stat .l{color:var(--muted);font-size:12px}
+.hint{color:var(--muted);font-size:12px;margin-top:8px}
+.qrbox{text-align:center;padding:8px}
+.qrbox img{max-width:min(360px,100%);width:auto;max-height:70vh;border:1px solid var(--line);border-radius:8px;background:#fff}
+.toast{position:fixed;right:18px;bottom:18px;background:#1c2128;color:#fff;
+  padding:10px 16px;border-radius:8px;font-size:13px;opacity:0;transition:.25s;pointer-events:none}
+.toast.on{opacity:1}
+a{color:var(--accent)}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:5px;background:#eef0f3;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>取件码 · 家庭聚合</h1>
+      <div class="sub" id="subtitle">加载中…</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="row">
+      <input id="token" type="password" placeholder="访问令牌" style="width:150px">
+      <button id="btn-save-token" class="primary">保存</button>
+      <button id="btn-refresh">刷新</button>
+    </div>
+  </header>
+
+  <div class="bar" id="stats"></div>
+
+  <div class="tabs">
+    <button class="on" data-tab="pending">未取件</button>
+    <button data-tab="picked">已取件</button>
+    <button data-tab="accounts">账号绑定</button>
+    <button data-tab="logs">日志</button>
+  </div>
+
+  <div id="tab-pending" class="tab-pane"></div>
+  <div id="tab-picked" class="tab-pane" style="display:none"></div>
+  <div id="tab-logs" class="tab-pane" style="display:none">
+    <div class="card">
+      <h2>运行日志</h2>
+      <div class="row" style="margin-bottom:10px">
+        <span class="hint">推送目标</span>
+        <button id="btn-push-me" onclick="setPushTarget('me')">私聊</button>
+        <button id="btn-push-group" onclick="setPushTarget('group')">群聊</button>
+        <button onclick="testPush()">发送测试消息</button>
+      </div>
+      <div class="row">
+        <button onclick="loadLogs()">刷新日志</button>
+        <span class="hint" id="log-meta"></span>
+      </div>
+      <pre id="log-pre" style="max-height:62vh;overflow:auto;background:#f6f8fa;color:#1f2328;border:1px solid var(--line);padding:12px;border-radius:8px;font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-all;margin:8px 0 0">加载中…</pre>
+    </div>
+  </div>
+  <div id="tab-accounts" class="tab-pane" style="display:none">
+    <div class="card">
+      <h2>账号绑定</h2>
+      <table><thead><tr><th>账号</th><th>平台</th><th>绑定</th><th>登录态</th><th>绑定时间</th><th></th></tr></thead>
+        <tbody id="bind-rows"></tbody></table>
+      <div class="hint">点「绑定 / 重新扫码」后，下方出二维码，用对应 App 扫。二维码约 1 分钟过期，过期了再点一次「重新扫码」就会换新码。</div>
+      <div class="qrbox" id="qrbox"></div>
+    </div>
+    <div class="card">
+      <h2>账号信息</h2>
+      <table><thead><tr><th>账号</th><th>上次上报</th><th>待取</th><th>历史总数</th></tr></thead>
+        <tbody id="acct-rows"></tbody></table>
+      <details style="margin-top:12px">
+        <summary class="hint" style="cursor:pointer">＋ 添加其他家庭成员（可选）</summary>
+        <div class="row" style="margin-top:8px">
+          <input id="new-label" placeholder="名称（如 对象）" style="width:200px">
+          <button onclick="addAccount()">添加</button>
+        </div>
+        <div class="hint">名称只是给你自己看的，内部 id 自动生成，不用管。</div>
+        <div id="add-msg" class="hint"></div>
+      </details>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const TOKEN_KEY = 'parcel_hub_token';
+let TOKEN = localStorage.getItem(TOKEN_KEY) || '';
+document.getElementById('token').value = TOKEN;
+let TAB = 'pending';
+let ALL = [], DEVICES = [], ACCOUNTS = [];
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('on'), 2400);
+}
+function saveToken(){
+  TOKEN = document.getElementById('token').value.trim();
+  localStorage.setItem(TOKEN_KEY, TOKEN);
+  toast(TOKEN ? '令牌已保存' : '令牌已清空');
+  load();
+}
+async function api(path, opts){
+  opts = opts || {};
+  opts.headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+  if(TOKEN) opts.headers['X-Hub-Token'] = TOKEN;
+  const r = await fetch(path, opts);
+  let j = null;
+  try { j = await r.json(); } catch(e){}
+  if(!r.ok) throw new Error((j && j.error) || ('HTTP ' + r.status));
+  return j;
+}
+const fmtTime = s => {
+  if(!s) return '—';
+  const d = new Date(s);
+  if(isNaN(d)) return s;
+  const p = n => String(n).padStart(2,'0');
+  return `${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+};
+const PLAT = {pdd:'拼多多', taobao:'淘宝', jd:'京东'};
+const platName = p => PLAT[p] || p || '—';
+
+function statusBadge(it){
+  if(it.status === 'arrived') return '<span class="badge b-warn">待取</span>';
+  if(it.status === 'stale')   return '<span class="badge b-mute">未同步</span>';
+  if(it.status === 'picked')  return '<span class="badge b-ok">已取</span>';
+  if(it.status === 'rejected')return '<span class="badge b-mute">拒收</span>';
+  return '<span class="badge b-accent">'+(it.status||'在途')+'</span>';
+}
+
+function renderStats(){
+  const pending = ALL.filter(i=>['arrived','stale'].includes(i.status)).length;
+  const picked  = ALL.filter(i=>i.status==='picked').length;
+  const transit = ALL.filter(i=>['transit','delivering','pendingShipment'].includes(i.status)).length;
+  const st = ALL.find(i=>i.status==='arrived');
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="n">${pending}</div><div class="l">待取件</div></div>
+    <div class="stat"><div class="n">${picked}</div><div class="l">已取件</div></div>
+    <div class="stat"><div class="n">${transit}</div><div class="l">在途</div></div>
+    <div class="stat"><div class="n">${DEVICES.length}</div><div class="l">账号</div></div>`;
+  document.getElementById('subtitle').textContent =
+    (st ? `最近到件 ${fmtTime(st.arrived_at||st.first_seen)} · ` : '') +
+    `共 ${ALL.length} 条记录 · ${new Date().toLocaleString('zh-CN')}`;
+}
+
+function gotoAccounts(){
+  const b = document.querySelector('.tabs button[data-tab="accounts"]');
+  if(b) b.click();
+}
+function acctWarning(){
+  const bad = ACCOUNTS.filter(a=>a.bound && a.valid === false);
+  if(!bad.length) return '';
+  const names = [...new Set(bad.map(a=>platName(a.platform)))].join('、');
+  return `<div class="card" style="border-color:#f5c2bd;background:#fff8f7">
+    <div style="color:#b42318;font-size:13px">⚠️ ${names} 登录态已失效，该平台抓取已暂停 ——
+      <a href="#" onclick="gotoAccounts();return false" style="color:#b42318;text-decoration:underline">去重新扫码</a>
+    </div></div>`;
+}
+
+function renderPending(){
+  const items = ALL.filter(i=>['arrived','stale'].includes(i.status))
+                    .sort((a,b)=>String(a.arrived_at||'').localeCompare(String(b.arrived_at||'')));
+  const box = document.getElementById('tab-pending');
+  const warn = acctWarning();
+  if(!items.length){ box.innerHTML = warn + '<div class="card"><div class="empty">当前没有待取包裹 🎉</div></div>'; return; }
+  box.innerHTML = warn + `<div class="card"><h2>未取件 <span class="count">${items.length}</span></h2>
+    <table><thead><tr>
+      <th>取件码</th><th>驿站</th><th>平台</th><th>归属</th><th>商品</th><th>快递</th><th>到件时间</th><th></th>
+    </tr></thead><tbody>${items.map(i=>`
+      <tr>
+        <td><span class="code">${i.pickup_code||'——'}</span> ${statusBadge(i)}</td>
+        <td>${i.station||'—'}</td>
+        <td>${platName(i.platform)}</td>
+        <td>${i.owner||'—'}</td>
+        <td>${(i.goods||'').slice(0,18)||'—'}</td>
+        <td>${i.courier||'—'}</td>
+        <td>${fmtTime(i.arrived_at||i.first_seen)}</td>
+        <td><button class="primary" onclick="markPicked('${i.hub_key}')">标记已取</button></td>
+      </tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderPicked(){
+  const items = ALL.filter(i=>i.status==='picked')
+                    .sort((a,b)=>String(b.picked_at||'').localeCompare(String(a.picked_at||'')));
+  const box = document.getElementById('tab-picked');
+  if(!items.length){ box.innerHTML = '<div class="card"><div class="empty">还没有已取记录</div></div>'; return; }
+  box.innerHTML = `<div class="card"><h2>已取件 <span class="count">${items.length}</span></h2>
+    <table><thead><tr>
+      <th>取件码</th><th>驿站</th><th>平台</th><th>归属</th><th>商品</th><th>取件时间</th><th></th>
+    </tr></thead><tbody>${items.map(i=>`
+      <tr>
+        <td><span class="code">${i.pickup_code||'——'}</span></td>
+        <td>${i.station||'—'}</td>
+        <td>${platName(i.platform)}</td>
+        <td>${i.owner||'—'}</td>
+        <td>${(i.goods||'').slice(0,20)||'—'}</td>
+        <td>${fmtTime(i.picked_at||i.updated_at)}</td>
+        <td><button onclick="unpick('${i.hub_key}')">撤销</button></td>
+      </tr>`).join('')}</tbody></table></div>`;
+}
+
+function renderAccounts(){
+  const accs = [...new Set(ACCOUNTS.map(a=>a.account))];
+  const plats = [...new Set(ACCOUNTS.map(a=>a.platform))];
+
+  const rows = ACCOUNTS.map(a=>`
+    <tr>
+      <td>${a.label||a.account}</td>
+      <td>${platName(a.platform)}</td>
+      <td>${a.bound ? '<span class="badge b-ok">已绑定</span>' : '<span class="badge b-mute">未绑定</span>'}</td>
+      <td>${!a.bound ? '—' : (a.valid === true
+            ? '<span class="badge b-ok">正常</span>'
+            : (a.valid === false
+                ? '<span class="badge" style="background:#fef3f2;color:#b42318">已失效</span>'
+                : '<span class="badge b-mute">待检测</span>'))}</td>
+      <td>${a.bound_at||'—'}</td>
+      <td><button class="${a.valid === false ? 'primary' : ''}" onclick="startBind('${a.account}','${a.platform}',true)">${a.bound?'重新扫码':'绑定'}</button>
+          ${accs.length>1?`<button onclick="delAccount('${a.account}')">删除</button>`:''}</td>
+    </tr>`).join('');
+  const tb = document.getElementById('bind-rows');
+  if(tb) tb.innerHTML = rows || '<tr><td colspan="5" class="empty">暂无账号</td></tr>';
+
+  const dev = DEVICES.map(d=>`<tr>
+      <td>${d.label||d.device}</td><td>${fmtTime(d.last_seen)}</td>
+      <td>${d.arrived}</td><td>${d.total}</td></tr>`).join('')
+    || '<tr><td colspan="4" class="empty">暂无上报记录</td></tr>';
+  const ab = document.getElementById('acct-rows');
+  if(ab) ab.innerHTML = dev;
+}
+
+async function addAccount(){
+  const label = document.getElementById('new-label').value.trim();
+  const msg = document.getElementById('add-msg');
+  if(!label){ msg.innerHTML = '<span style="color:var(--danger)">请先填名称</span>'; return; }
+  // 内部 id 自动生成（只用来命名登录态文件，用户不需要理解）
+  const id = ('a' + Date.now().toString(36)).slice(-6).toLowerCase();
+  try{
+    const j = await api('/api/v1/accounts/add', {method:'POST', body:JSON.stringify({id, label})});
+    msg.innerHTML = `<span style="color:var(--ok)">已添加「${j.account.label}」</span>`;
+    document.getElementById('new-label').value = '';
+    load();
+  }catch(e){ msg.innerHTML = `<span style="color:var(--danger)">失败：${e.message}</span>`; }
+}
+async function delAccount(id){
+  if(!confirm(`确定删除账号「${id}」？\n该账号的平台绑定会一并移除，历史记录保留。`)) return;
+  try{
+    await api('/api/v1/accounts/remove', {method:'POST', body:JSON.stringify({id})});
+    toast('已删除'); load();
+  }catch(e){ toast('失败：'+e.message); }
+}
+
+async function markPicked(key){
+  try{ await api('/api/v1/pick_key', {method:'POST', body:JSON.stringify({key})}); toast('已标记为已取'); load(); }
+  catch(e){ toast('失败：'+e.message); }
+}
+async function unpick(key){
+  try{ await api('/api/v1/unpick', {method:'POST', body:JSON.stringify({key})}); toast('已撤销'); load(); }
+  catch(e){ toast('失败：'+e.message); }
+}
+let POLL_ID = 0;
+async function startBind(account, platform, force){
+  const box = document.getElementById('qrbox');
+  const myId = ++POLL_ID;              // 换平台时让上一轮轮询自行退出
+  box.innerHTML = '<div class="empty">正在打开浏览器（首次约 10~20 秒）…</div>';
+  try{
+    await api('/api/v1/scan/start', {method:'POST', body:JSON.stringify({account, platform, force: !!force})});
+  }catch(e){ box.innerHTML = `<div class="empty">失败：${e.message}</div>`; return; }
+  if(myId !== POLL_ID) return;
+  pollScan(account, platform, myId);
+}
+async function pollScan(account, platform, myId){
+  const box = document.getElementById('qrbox');
+  let img = null, st = null, lastTs = -1;
+  for(let i=0;i<300;i++){              // 15 分钟，与服务端 login_wait_sec(900s) 对齐
+    await new Promise(r=>setTimeout(r,3000));
+    if(myId !== POLL_ID) return;
+    let t;
+    try{ t = (await api('/api/v1/scan/status?account='+encodeURIComponent(account)
+                       +'&platform='+encodeURIComponent(platform))).task; }catch(e){ continue; }
+    if(!t || t.state==='idle') continue;
+    if(t.state==='waiting' || t.state==='running'){
+      if(!img){
+        // 只在第一次建 DOM，之后只改文字和 src。
+        // 每 3 秒重建一次 <img> 会让二维码反复空白重载，看起来就是「一闪而过」。
+        box.innerHTML = '<div class="empty" id="qrst"></div>'
+          + '<img id="qrimg" alt="扫码" style="display:none">'
+          + '<div class="hint">二维码每 15 秒自动刷新；已失效就重新点「绑定」</div>';
+        img = document.getElementById('qrimg');
+        st = document.getElementById('qrst');
+      }
+      if(st) st.textContent = t.message || '等待扫码…';
+      const ts = t.qr_ts || 0;
+      if(t.qr){
+        if(ts !== lastTs){
+          lastTs = ts;
+          // 先预加载、成功了再换 src：直接换 src 会在下载期间把旧图清空，
+          // 看起来就是二维码「消失了一下」。失败则保留旧图并下一轮重试。
+          const url = `/qr/${t.qr}?t=${QRTOKEN}&v=${ts}`;
+          const pre = new Image();
+          pre.onload = ()=>{ img.src = url; img.style.display = ''; };
+          pre.onerror = ()=>{ lastTs = -1; };
+          pre.src = url;
+        }
+      }else{ img.style.display = 'none'; }
+    } else if(t.state==='done'){
+      box.innerHTML = '<div class="empty">✅ 绑定成功</div>'; toast('绑定成功'); load(); return;
+    } else {
+      box.innerHTML = `<div class="empty">${t.message||'失败'}</div>`; return;
+    }
+  }
+  box.innerHTML = '<div class="empty">等待超时，请重新点「绑定」</div>';
+}
+let QRTOKEN = '';
+async function load(){
+  try{
+    const r = await api('/api/v1/all');
+    ALL = r.items || [];
+  }catch(e){ document.getElementById('subtitle').textContent = '加载失败：'+e.message; return; }
+  try{ DEVICES = (await api('/api/v1/devices')).devices || []; }catch(e){ DEVICES=[]; }
+  try{
+    const a = await api('/api/v1/scan/accounts');
+    ACCOUNTS = a.accounts || [];
+    QRTOKEN = a.qr_token || '';
+  }catch(e){ ACCOUNTS=[]; }
+  renderStats(); renderPending(); renderPicked(); renderAccounts();
+}
+document.querySelectorAll('.tabs button').forEach(b=>{
+  b.onclick = ()=>{
+    document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); TAB = b.dataset.tab;
+    if(TAB === 'logs'){ loadPush(); loadLogs(); }
+    ['pending','picked','accounts','logs'].forEach(t=>{
+      document.getElementById('tab-'+t).style.display = (t===TAB)?'':'none';
+    });
+  };
+});
+let PUSH_TARGET = '';
+function markPush(){
+  const me = document.getElementById('btn-push-me');
+  const gp = document.getElementById('btn-push-group');
+  if(!me || !gp) return;
+  me.classList.toggle('primary', PUSH_TARGET === 'me');
+  gp.classList.toggle('primary', PUSH_TARGET === 'group');
+}
+async function loadPush(){
+  try{
+    const r = await api('/api/v1/push');
+    PUSH_TARGET = r.target || '';
+    markPush();
+  }catch(e){ /* 未填令牌时静默 */ }
+}
+async function setPushTarget(t){
+  try{
+    const r = await api('/api/v1/push_target', {method:'POST', body:JSON.stringify({target:t})});
+    PUSH_TARGET = r.target || t;
+    markPush();
+    toast('推送目标：' + (PUSH_TARGET === 'me' ? '私聊' : '群聊'));
+    loadLogs();
+  }catch(e){ toast('切换失败：' + e.message); }
+}
+async function testPush(){
+  try{
+    const r = await api('/api/v1/test_push', {method:'POST'});
+    toast(r.ok ? ('测试消息已发送（' + (r.target === 'me' ? '私聊' : '群聊') + '）') : '发送失败，看日志');
+    setTimeout(loadLogs, 1200);
+  }catch(e){ toast('发送失败：' + e.message); }
+}
+
+async function loadLogs(){
+  const pre = document.getElementById('log-pre');
+  const meta = document.getElementById('log-meta');
+  if(!pre) return;
+  try{
+    const r = await api('/api/v1/logs?lines=400');
+    pre.textContent = (r.lines||[]).join('\n') || '（还没有日志）';
+    meta.textContent = `dry_run=${r.dry_run} · target=${r.target} · ${r.file||''}`;
+  }catch(e){ pre.textContent = '读取失败：' + e.message; }
+}
+setInterval(()=>{ if(!document.hidden && TAB==='logs') loadLogs(); }, 5000);
+
+async function boot(){
+  // 服务端关掉令牌时，直接进主流程并隐藏令牌输入，做到"打开就能用"
+  try{
+    const h = await fetch('/health', {cache:'no-store'}).then(r=>r.json());
+    if(h && h.require_token === false){
+      const ti = document.getElementById('token');
+      const tb = document.getElementById('btn-save-token');
+      if(ti) ti.style.display = 'none';
+      if(tb) tb.style.display = 'none';
+      TOKEN = '';
+    }
+  }catch(e){ /* 拿不到就按有令牌处理 */ }
+  load();
+}
+document.getElementById('btn-save-token').onclick = saveToken;
+document.getElementById('btn-refresh').onclick = load;
+document.getElementById('token').addEventListener('keydown', e=>{ if(e.key==='Enter') saveToken(); });
+boot();
+setInterval(()=>{ if(!document.hidden) load(); }, 30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "dry_run": true,
+  "token": "换成 32 字节随机串",
+  "owners": {
+    "wo": "我",
+    "ta": "对象"
+  },
+  "qq_bridge": {
+    "url": "http://127.0.0.1:8787/notify",
+    "token": "qq-bridge 的 X-Bridge-Token",
+    "target": "group"
+  },
+  "summary_at": "17:00",
+  "max_pickup_age_hours": 72
+}
